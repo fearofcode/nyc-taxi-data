@@ -2,4 +2,4 @@
 .DS_Store
 ggmapTemp.png
 TAGS
-data/*.csv
+data/*tripdata*.csv
