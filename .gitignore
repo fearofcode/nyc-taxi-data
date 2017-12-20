@@ -3,3 +3,5 @@
 ggmapTemp.png
 TAGS
 data/*tripdata*.csv
+data/uber*.csv*
+*.swp
