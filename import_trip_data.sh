@@ -24,30 +24,6 @@ yellow_schema_2017_h1="(vendor_id,tpep_pickup_datetime,tpep_dropoff_datetime,pas
 # sed -E '/(.*,){18,}/d' data/yellow_tripdata_2010-02.csv > data/yellow_tripdata_2010-02.csv
 # sed -E '/(.*,){18,}/d' data/yellow_tripdata_2010-03.csv > data/yellow_tripdata_2010-03.csv
 
-for filename in data/green*.csv; do
-  [[ $filename =~ $year_month_regex ]]
-  year=${BASH_REMATCH[1]}
-  month=$((10#${BASH_REMATCH[2]}))
-
-  if [ $year -lt 2015 ]; then
-    schema=$green_schema_pre_2015
-  elif [ $year -eq 2015 ] && [ $month -lt 7 ]; then
-    schema=$green_schema_2015_h1
-  elif [ $year -eq 2015 ] || ([ $year -eq 2016 ] && [ $month -lt 7 ]); then
-    schema=$green_schema_2015_h2_2016_h1
-  elif [ $year -eq 2016 ] && [ $month -gt 6 ]; then
-    schema=$green_schema_2016_h2
-  else
-    schema=$green_schema_2017_h1
-  fi
-
-  echo "`date`: beginning load for ${filename}"
-  sed $'s/\r$//' $filename | sed '/^$/d' | psql nyc-taxi-data -c "COPY green_tripdata_staging ${schema} FROM stdin CSV HEADER;"
-  echo "`date`: finished raw load for ${filename}"
-  psql nyc-taxi-data -f populate_green_trips.sql
-  echo "`date`: loaded trips for ${filename}"
-done;
-
 for filename in data/yellow*.csv; do
   [[ $filename =~ $year_month_regex ]]
   year=${BASH_REMATCH[1]}
@@ -63,11 +39,12 @@ for filename in data/yellow*.csv; do
     schema=$yellow_schema_2017_h1
   fi
 
-  echo "`date`: beginning load for ${filename}"
-  sed $'s/\r$//' $filename | sed '/^$/d' | psql nyc-taxi-data -c "COPY yellow_tripdata_staging ${schema} FROM stdin CSV HEADER;"
-  echo "`date`: finished raw load for ${filename}"
-  psql nyc-taxi-data -f populate_yellow_trips.sql
-  echo "`date`: loaded trips for ${filename}"
+  preprocessed_filename="${filename}-processed"
+  echo "`date`: preprocessing ${filename}"
+  sed $'s/\r$//' $filename | sed '/^$/d' > $preprocessed_filename
+  echo "`date`: done preprocessing. beginning load for ${preprocessed_filename}"
+  psql nyc-taxi-data -c "COPY yellow_tripdata_staging ${schema} FROM '$(pwd)/${preprocessed_filename}' CSV HEADER;"
+  echo "`date`: done copying ${preprocessed_filename}"
+  break
 done;
 
-psql nyc-taxi-data -c "CREATE INDEX idx_trips_on_pickup_datetime_brin ON trips USING BRIN (pickup_datetime) WITH (pages_per_range = 32);"

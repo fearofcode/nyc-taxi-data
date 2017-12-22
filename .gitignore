@@ -2,6 +2,6 @@
 .DS_Store
 ggmapTemp.png
 TAGS
-data/*tripdata*.csv
+data/*tripdata*.csv*
 data/uber*.csv*
 *.swp

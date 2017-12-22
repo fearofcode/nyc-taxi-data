@@ -35,7 +35,7 @@ but data actually has 22 or 23 columns per row, which COPY doesn't like.
 junk1 and junk2 should always be null
 */
 
-CREATE TABLE yellow_tripdata_staging (
+CREATE UNLOGGED TABLE yellow_tripdata_staging (
   id serial primary key,
   vendor_id varchar,
   tpep_pickup_datetime varchar,
